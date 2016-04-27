@@ -1,5 +1,28 @@
 #!/usr/bin/perl
 #
+# check_mvetec.pl
+#
+# MVE TEC 3000 Freezers have an 'alarm' relay to make it easy to plug into a remote notification
+# system, but what if you want more detail? Which freezer in the group is upset and why?
+# Turns out, they also have a little brain which speaks RS-485 4 wire serial and can be
+# queried for data such as temperature probe values.
+#
+# Hardware Setup:
+#   In the menu, under advanced, set the MODBUS id uniquely for each freezer on the bus (RS-485 lets
+#   you wire them all together)
+#   Instead of the USB dongle that comes with Chart's software ($500!) get a Lantronix UDS1100
+#   RS-485 to ethernet adapter (only around $200). You'll need a 25 pin to RJ45 adapter, and
+#   reference the wiring on page 92 of the MVE TEC manual and the 4 wire RS485 diagram that
+#   comes with the UDS1100 for proper wire mapping.  (rx+ to tx+, rx- to tx-)
+#   Once the UDS1100 is configured, you can connect to it with telnet and send it things like:
+#     001 TEMPA?
+#   It will respond with the value. Commands are well documented in the MVE TEC manual.
+#     -197.10
+#
+#   This script is an icinga plugin which uses the above setup to allow you to monitor
+#   values on your freezer from icinga or nagios. It can also optionally log the results
+#   to ganglia, which we like as a nice graphic record.
+#
 use strict;
 use warnings;
 
