@@ -5,7 +5,6 @@
 #  
 # This software is Copyright (c):
 #
-#   * 2009 NETWAYS GmbH, Birger Schmidt <info@netways.de>
 #   * 2017 ZIRC, Alex Schumann <alex@zebrafish.org>
 # 
 # LICENSE:
@@ -26,14 +25,18 @@
 # 02110-1301 or visit their web page on the internet at
 # http://www.fsf.org.
 # 
-
+#
 #This util is based on the API Documentation located at:
 #http://www.multitech.com/documents/publications/manuals/s000576_1_2_1.pdf
 #and examples at:
 #http://www.multitech.net/developer/software/mtr-api-reference/rcell_api_requests/making-requests/send_sms/
 #
-
-
+#
+# This script is loosely based on a similar but more complete script
+# to support smsFinder/isms devices by Birger Schmidt available
+# here: https://exchange.nagios.org/directory/Plugins/Hardware/Network-Gear/MultiTech/smsfinder-2Epl/details
+#
+#
 ######################################################################
 ######################################################################
 #
