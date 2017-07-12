@@ -37,6 +37,142 @@
 # here: https://exchange.nagios.org/directory/Plugins/Hardware/Network-Gear/MultiTech/smsfinder-2Epl/details
 #
 #
+# DOCUMENTATION
+
+=head1 NAME
+
+=over 1
+
+=item B<rcell.pl>
+
+	the Nagios Signal check plugin and SMS message Sender for the Multitech rCell
+
+=back
+
+=head1 DESCRIPTION
+
+=over 1
+
+=item Depending on how it is called,
+
+	- Checks a Multitech rCell and returns if it is connected 
+		to the GSM Network and the level of signal strength.
+	- send an SMS via a Multitech rCell
+
+=back
+
+=head1 SYNOPSIS
+
+=over 1
+
+=item B<rcell.pl> 
+    -H <hostname> -u <username> -p <password> -n <phonenumber> -m "<message>"
+
+=item B<rcell.pl> 
+    -H <hostname> -u <username> -p <password> -w <warninglevel> -c <criticallevel>
+
+    [-H|--hostaddress=<hostaddress>]
+    [-u|--user=<user>]
+    [-p|--password=<password>]
+    [-m|--message=<message text>]
+    [-v|--verbose]
+    [-h|--help] 
+    [-V|--version]
+    [-n|--number=<telephone number of the recipient>]
+    [-w|--warning=<signallevel>]
+    [-c|--critical=<signallevel>]
+
+=back
+
+=head1 OPTIONS
+
+=over 4
+
+=item -H <hostaddress>
+
+Hostaddress of the SMSFinder
+
+=item -v|--verbose
+
+Enable verbose mode and show whats going on.
+
+=item -V|--version
+
+Print version an exit.
+
+=item -h|--help
+
+Print help message and exit.
+
+=item -n|--number
+
+Telephone number of the SMS recipient
+
+=item -m|--message
+
+SMS message text
+
+=item -w|--warning
+
+Warning level for signal strength. Scale is 0-30
+
+=item -c|--critical
+
+Critical level for signal strength. Scale is 0-30
+
+=back
+
+=head1 EXAMPLE for Nagios check configuration 
+
+ # command definition to check SMSFinder via HTTP
+ define command {
+	command_name		check_smsfinder
+	command_line		$USER1$/rcell.pl -H $HOSTADDRESS$ -u $USER15$ -p $USER16$ -w $ARG1$ -c $ARG2$
+ }
+
+ # service definition to check the SMSFinder
+ define service {
+	use					generic-service
+	host_name			smsfinder
+	service_description	smsfinder
+	check_command		check_smsfinder!15!20	 # warning and critical in percent
+	## maybe it's whise to alter the service/host template
+	#contact_groups		smsfinders
+  }
+ 
+=head1 EXAMPLE for Nagios notification configuration 
+
+ define command {
+	command_name    notify-host-by-sms
+	command_line    /usr/local/nagios/rcell.pl -H $HOSTADDRESS:rcell$ -u $USER13$ -p $USER14$ -n $CONTACTPAGER$ -m '$NOTIFICATIONTYPE$ $HOSTNAME$ is $HOSTSTATE$ /$SHORTDATETIME$/ $HOSTOUTPUT$'
+ }
+
+ define command {
+	command_name    notify-service-by-sms
+	command_line    /usr/local/nagios/smsack/sendsms.pl -H $HOSTADDRESS:rcell$ -u $USER13$ -p $USER14$ -n $CONTACTPAGER$ -m '$NOTIFICATIONTYPE$ $HOSTNAME$,$SERVICEDESC$ is $SERVICESTATE$ /$SHORTDATETIME$/ $SERVICEOUTPUT$'
+ }
+
+ # contact definition - maybe it's wise to alter the contact template
+ define contact {
+	contact_name                    smsfinder
+	use                             generic-contact
+	alias                           SMS Nagios Admin
+	# send notifications via email and SMS
+	service_notification_commands   notify-service-by-email,notify-service-by-sms
+	host_notification_commands      notify-host-by-email,notify-host-by-sms
+	email                           nagios@localhost
+	pager                           +491725555555		# alter this please!
+ }
+
+ # contact definition - maybe it's wise to alter the contact template
+ define contactgroup {
+	contactgroup_name       rcell
+	alias                   SMS Nagios Administrators
+	members                 rcell
+ }
+
+=cut
+
 ######################################################################
 ######################################################################
 #
@@ -45,6 +181,9 @@
 my $object_cache	= "/var/spool/nagios/objects.cache";
 my $nagios_cmd		= "/var/spool/nagios/rw/nagios.cmd";
 my $logfile			= "/usr/local/var/nagios/rcell.log";
+#
+######################################################################
+
 
 my $ok = "^OK ";
 my $ack = "^ACK ";
@@ -383,142 +522,6 @@ else {
 	});
 }
 
-
-# DOCUMENTATION
-
-=head1 NAME
-
-=over 1
-
-=item B<rcell.pl>
-
-	the Nagios Signal check plugin and SMS message Sender for the Multitech rCell
-
-=back
-
-=head1 DESCRIPTION
-
-=over 1
-
-=item Depending on how it is called,
-
-	- Checks a Multitech rCell and returns if it is connected 
-		to the GSM Network and the level of signal strength.
-	- send an SMS via a Multitech rCell
-
-=back
-
-=head1 SYNOPSIS
-
-=over 1
-
-=item B<rcell.pl> 
-    -H <hostname> -u <username> -p <password> -n <phonenumber> -m "<message>"
-
-=item B<rcell.pl> 
-    -H <hostname> -u <username> -p <password> -w <warninglevel> -c <criticallevel>
-
-    [-H|--hostaddress=<hostaddress>]
-    [-u|--user=<user>]
-    [-p|--password=<password>]
-    [-m|--message=<message text>]
-    [-v|--verbose]
-    [-h|--help] 
-    [-V|--version]
-    [-n|--number=<telephone number of the recipient>]
-    [-w|--warning=<signallevel>]
-    [-c|--critical=<signallevel>]
-
-=back
-
-=head1 OPTIONS
-
-=over 4
-
-=item -H <hostaddress>
-
-Hostaddress of the SMSFinder
-
-=item -v|--verbose
-
-Enable verbose mode and show whats going on.
-
-=item -V|--version
-
-Print version an exit.
-
-=item -h|--help
-
-Print help message and exit.
-
-=item -n|--number
-
-Telephone number of the SMS recipient
-
-=item -m|--message
-
-SMS message text
-
-=item -w|--warning
-
-Warning level for signal strength. Scale is 0-30
-
-=item -c|--critical
-
-Critical level for signal strength. Scale is 0-30
-
-=back
-
-=head1 EXAMPLE for Nagios check configuration 
-
- # command definition to check SMSFinder via HTTP
- define command {
-	command_name		check_smsfinder
-	command_line		$USER1$/rcell.pl -H $HOSTADDRESS$ -u $USER15$ -p $USER16$ -w $ARG1$ -c $ARG2$
- }
-
- # service definition to check the SMSFinder
- define service {
-	use					generic-service
-	host_name			smsfinder
-	service_description	smsfinder
-	check_command		check_smsfinder!15!20	 # warning and critical in percent
-	## maybe it's whise to alter the service/host template
-	#contact_groups		smsfinders
-  }
- 
-=head1 EXAMPLE for Nagios notification configuration 
-
- define command {
-	command_name    notify-host-by-sms
-	command_line    /usr/local/nagios/rcell.pl -H $HOSTADDRESS:rcell$ -u $USER13$ -p $USER14$ -n $CONTACTPAGER$ -m '$NOTIFICATIONTYPE$ $HOSTNAME$ is $HOSTSTATE$ /$SHORTDATETIME$/ $HOSTOUTPUT$'
- }
-
- define command {
-	command_name    notify-service-by-sms
-	command_line    /usr/local/nagios/smsack/sendsms.pl -H $HOSTADDRESS:rcell$ -u $USER13$ -p $USER14$ -n $CONTACTPAGER$ -m '$NOTIFICATIONTYPE$ $HOSTNAME$,$SERVICEDESC$ is $SERVICESTATE$ /$SHORTDATETIME$/ $SERVICEOUTPUT$'
- }
-
- # contact definition - maybe it's wise to alter the contact template
- define contact {
-	contact_name                    smsfinder
-	use                             generic-contact
-	alias                           SMS Nagios Admin
-	# send notifications via email and SMS
-	service_notification_commands   notify-service-by-email,notify-service-by-sms
-	host_notification_commands      notify-host-by-email,notify-host-by-sms
-	email                           nagios@localhost
-	pager                           +491725555555		# alter this please!
- }
-
- # contact definition - maybe it's wise to alter the contact template
- define contactgroup {
-	contactgroup_name       rcell
-	alias                   SMS Nagios Administrators
-	members                 rcell
- }
-
-=cut
 
 
 
